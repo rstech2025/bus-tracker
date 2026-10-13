@@ -1,0 +1,184 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f6f7f2" />
+    <meta
+      name="description"
+      content="Follow your bus live, check its location, and see which stops it has reached."
+    />
+    <title>Wayfarer — Bus tracking, made simple</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+      integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+      crossorigin=""
+    />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <div class="app-shell">
+      <header class="topbar">
+        <a class="brand" href="./" aria-label="Wayfarer home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none">
+              <rect x="2" y="2" width="36" height="36" rx="13" fill="currentColor" />
+              <path d="M13 27V15.5a3.5 3.5 0 0 1 7 0V27m0-8h7v8" stroke="#F6F7F2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" />
+              <circle cx="16.5" cy="14" r="1" fill="#F6F7F2" />
+              <circle cx="23.5" cy="14" r="1" fill="#F6F7F2" />
+            </svg>
+          </span>
+          <span class="brand-name">wayfarer<span>.</span></span>
+        </a>
+        <div class="topbar-right">
+          <span class="service-note"><span class="service-dot"></span> Transit, in the know</span>
+          <button class="driver-entry" id="openDriver" type="button">
+            <svg viewBox="0 0 20 20" aria-hidden="true"><path d="M10 10a3.2 3.2 0 1 0 0-6.4A3.2 3.2 0 0 0 10 10Zm5.5 6.2a5.5 5.5 0 0 0-11 0" /></svg>
+            Driver sign in
+            <span aria-hidden="true">↗</span>
+          </button>
+        </div>
+      </header>
+
+      <main>
+        <section class="intro">
+          <div class="intro-copy">
+            <div class="eyebrow"><span class="eyebrow-line"></span> YOUR CITY. YOUR TIME.</div>
+            <h1>Good trips start<br />with <span>knowing.</span></h1>
+            <p>See where your bus is and when it gets to your stop. No account, no guesswork.</p>
+          </div>
+          <div class="route-search">
+            <label for="busId">Find your bus</label>
+            <form class="search-form" id="searchForm">
+              <span class="search-icon" aria-hidden="true">
+                <svg viewBox="0 0 24 24"><circle cx="10.8" cy="10.8" r="6.8" /><path d="m16 16 4.2 4.2" /></svg>
+              </span>
+              <input id="busId" name="busId" type="text" value="BUS-101" maxlength="24" autocomplete="off" placeholder="Enter bus ID" aria-label="Bus ID" />
+              <button type="submit">Track bus <span aria-hidden="true">→</span></button>
+            </form>
+            <div class="search-hint"><span class="hint-icon">i</span> Ask your driver or transit operator for the bus ID.</div>
+          </div>
+        </section>
+
+        <section class="tracking-layout" aria-label="Live bus tracking">
+          <div class="map-panel">
+            <div class="map-topline">
+              <div class="map-heading">
+                <span class="map-pin" aria-hidden="true">
+                  <svg viewBox="0 0 24 24"><path d="M19 10.1c0 5-7 10.4-7 10.4S5 15.1 5 10.1a7 7 0 1 1 14 0Z" /><circle cx="12" cy="10" r="2.2" /></svg>
+                </span>
+                <div><h2 id="mapRoute">Waiting for your bus</h2><p id="mapSubhead">Live location will appear here</p></div>
+              </div>
+              <span class="live-pill" id="livePill"><span></span> <b>CONNECTING</b></span>
+            </div>
+            <div class="map-frame">
+              <div id="map" aria-label="Map showing bus and route stops"></div>
+              <div class="map-empty" id="mapEmpty">
+                <span class="empty-bus" aria-hidden="true">
+                  <svg viewBox="0 0 48 48"><path d="M13 35V15a4 4 0 0 1 4-4h14a4 4 0 0 1 4 4v20m-22-4h22m-21-4h20M16 19h16v6H16zm1 16v3m14-3v3" /><circle cx="17.5" cy="32" r="1" fill="currentColor" /><circle cx="30.5" cy="32" r="1" fill="currentColor" /></svg>
+                </span>
+                <strong>Your next ride is right around the corner.</strong>
+                <span>Enter a bus ID above to see it on the map.</span>
+              </div>
+              <div class="map-legend">
+                <span><i class="legend-bus"></i> Your bus</span>
+                <span><i class="legend-stop"></i> Bus stop</span>
+              </div>
+              <a class="map-open" id="openMaps" href="#" target="_blank" rel="noreferrer" hidden>
+                Open in Maps <span aria-hidden="true">↗</span>
+              </a>
+            </div>
+            <div class="map-footer">
+              <div class="map-footer-note"><span class="footer-clock" aria-hidden="true">◷</span> Updates live as your bus moves</div>
+              <span class="map-coordinates" id="coordinates">Waiting for GPS</span>
+            </div>
+          </div>
+
+          <aside class="trip-panel">
+            <div class="trip-head">
+              <div>
+                <div class="eyebrow eyebrow-small">YOUR JOURNEY</div>
+                <h2>Along the way</h2>
+              </div>
+              <span class="stop-count" id="stopCount">0 STOPS</span>
+            </div>
+            <div class="trip-summary">
+              <div class="summary-route"><span class="route-icon">↗</span><span id="routeName">Route details arrive with the bus</span></div>
+              <div class="summary-separator"></div>
+              <div class="summary-live"><span class="summary-pulse"></span><span id="locationSummary">Looking for a live location</span></div>
+            </div>
+            <div class="stops-list" id="stopsList">
+              <div class="stops-empty">
+                <span class="stops-empty-icon">⌁</span>
+                <strong>Stops will show up here</strong>
+                <span>Once your driver starts sharing the route, you can follow each stop along the way.</span>
+              </div>
+            </div>
+            <div class="trip-foot"><span class="privacy-icon" aria-hidden="true">◈</span> Made for riders. No sign-in needed.</div>
+          </aside>
+        </section>
+
+        <footer class="page-footer">
+          <span>Better journeys, one stop at a time.</span>
+          <span class="footer-brand">wayfarer<span>.</span></span>
+        </footer>
+      </main>
+    </div>
+
+    <dialog class="driver-dialog" id="driverDialog" aria-labelledby="driverTitle">
+      <div class="dialog-top">
+        <a class="brand" href="./" aria-label="Wayfarer home">
+          <span class="brand-mark" aria-hidden="true">
+            <svg viewBox="0 0 40 40" fill="none"><rect x="2" y="2" width="36" height="36" rx="13" fill="currentColor" /><path d="M13 27V15.5a3.5 3.5 0 0 1 7 0V27m0-8h7v8" stroke="#F6F7F2" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" /></svg>
+          </span>
+          <span class="brand-name">wayfarer<span>.</span></span>
+        </a>
+        <button class="icon-button" id="closeDriver" type="button" aria-label="Close driver panel">✕</button>
+      </div>
+      <div class="dialog-content">
+        <div class="eyebrow"><span class="eyebrow-line"></span> DRIVER PORTAL</div>
+        <h2 id="driverTitle">Your route,<br /><span>in motion.</span></h2>
+        <p class="dialog-description" id="driverDescription">Sign in with your driver account to share a route with your riders.</p>
+        <div class="driver-message" id="driverMessage" role="status" hidden></div>
+
+        <form id="loginForm" class="driver-form">
+          <label for="driverEmail">Email address</label>
+          <input id="driverEmail" type="email" required autocomplete="username" placeholder="you@transit.com" />
+          <label for="driverPassword">Password</label>
+          <input id="driverPassword" type="password" required autocomplete="current-password" placeholder="Enter your password" />
+          <button class="submit-button" type="submit">Sign in to continue <span aria-hidden="true">→</span></button>
+          <p class="form-note">Driver accounts are created by your transit administrator.</p>
+        </form>
+
+        <form id="routeForm" class="driver-form" hidden>
+          <label for="driverBusId">Bus ID</label>
+          <input id="driverBusId" type="text" required minlength="2" maxlength="24" pattern="[A-Za-z0-9_-]{2,24}" placeholder="e.g. BUS-101" />
+          <label for="driverRouteName">Route name</label>
+          <input id="driverRouteName" type="text" required maxlength="80" placeholder="e.g. Green Line · Central" />
+          <label for="driverStops">Stops <span>one stop per line</span></label>
+          <textarea id="driverStops" required rows="4" placeholder="Stop name|latitude|longitude&#10;Central Station|22.5726|88.3639"></textarea>
+          <p class="form-note">Use each stop’s coordinates in latitude, longitude order.</p>
+          <button class="submit-button" id="startTracking" type="submit">Save route &amp; start sharing <span aria-hidden="true">→</span></button>
+          <button class="stop-button" id="stopTracking" type="button">Stop sharing location</button>
+          <button class="signout-button" id="signOut" type="button">Sign out</button>
+        </form>
+
+        <div class="driver-disclaimer" id="driverDisclaimer" hidden>
+          <span aria-hidden="true">!</span>
+          Keep this page open and allow location access while driving. Web browsers may pause location updates when the page is in the background.
+        </div>
+      </div>
+    </dialog>
+    <div class="toast" id="toast" role="status" aria-live="polite"></div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js" integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>

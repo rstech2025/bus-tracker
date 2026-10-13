@@ -1,0 +1,56 @@
+{
+  "rules": {
+    "busOwners": {
+      "$busId": {
+        ".read": "auth != null && data.val() === auth.uid",
+        ".write": "auth != null && ((!data.exists() && newData.val() === auth.uid) || (data.val() === auth.uid && newData.val() === auth.uid))",
+        ".validate": "newData.isString() && newData.val() === auth.uid"
+      }
+    },
+    "buses": {
+      "$busId": {
+        ".read": true,
+        ".write": "auth != null && root.child('busOwners').child($busId).val() === auth.uid",
+        "metadata": {
+          "routeName": {
+            ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+          },
+          "stops": {
+            "$stopId": {
+              ".validate": "newData.hasChildren(['name', 'latitude', 'longitude'])",
+              "name": {
+                ".validate": "newData.isString() && newData.val().length > 0 && newData.val().length <= 80"
+              },
+              "latitude": {
+                ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+              },
+              "longitude": {
+                ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+              }
+            }
+          }
+        },
+        "location": {
+          ".validate": "newData.hasChildren(['latitude', 'longitude', 'accuracy', 'updatedAt'])",
+          "latitude": {
+            ".validate": "newData.isNumber() && newData.val() >= -90 && newData.val() <= 90"
+          },
+          "longitude": {
+            ".validate": "newData.isNumber() && newData.val() >= -180 && newData.val() <= 180"
+          },
+          "accuracy": {
+            ".validate": "newData.isNumber() && newData.val() >= 0"
+          },
+          "updatedAt": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
+        },
+        "arrivals": {
+          "$stopId": {
+            ".validate": "newData.isNumber() && newData.val() > 0"
+          }
+        }
+      }
+    }
+  }
+}
